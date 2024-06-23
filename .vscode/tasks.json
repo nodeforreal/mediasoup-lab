@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "start",
+			"path": "client",
+			"problemMatcher": [],
+			"label": "npm: start - client",
+			"detail": "react-scripts start",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"type": "npm",
+			"script": "dev",
+			"path": "server",
+			"problemMatcher": [],
+			"label": "npm: dev - server",
+			"detail": "node --watch  --trace-warnings server.js",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}
