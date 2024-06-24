@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
-import io from "socket.io-client";
+import styled from "styled-components";
 import { Device } from "mediasoup-client";
+import io from "socket.io-client";
 
 import "./App.css";
 
@@ -49,7 +50,10 @@ function App() {
   const getUserMedia = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: {
+          width: 800,
+          height: 450,
+        },
         // audio: true,
       });
 
@@ -240,11 +244,21 @@ function App() {
   }, []);
 
   return (
-    <div className="App">
+    <Container>
       <video ref={videoClientRef} autoPlay></video>
       <video ref={videoRemoteRef} autoPlay></video>
-    </div>
+    </Container>
   );
 }
+
+const Container = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 1.2rem;
+  video {
+    width: 100%;
+    aspect-ratio: 16/9;
+  }
+`;
 
 export default App;
