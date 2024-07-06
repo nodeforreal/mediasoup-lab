@@ -167,11 +167,15 @@ client
   const getUserMedia = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({video: true });
+
       videoClientRef.current.srcObject = stream;
+
+      // add track to producer parameter
       params = {
         track: stream.getTracks()[0],
         ...params,
       };
+
     } catch (error) {
       console.log("Error/get media streams:", error);
     }
@@ -243,12 +247,41 @@ client
   const createSendTransport = async () => {
     // get transport parameters from server
     socket.emit("CREATE_WEBRTC_TRANSPORT", { sender: true }, async (params) => {
+
       if (params.error) {
         console.log("Error/create send transport:", params.error);
         return;
       }
 
       producerTransport = device.createSendTransport(params);
+
+      producerTransport.on(
+        "connect",
+        async ({ dtlsParameters }, callback, errback) => {
+          try {
+            // connect send transport on server
+            await socket.emit("TRANSPORT_CONNECT", dtlsParameters);
+
+            // must be invoked to tell server dtls parameter transferred
+            callback();
+          } catch (error) {
+            console.log("Error/producer transport on connect:", error);
+            errback(error);
+          }
+        }
+      );
+
+      producerTransport.on("produce", async (params, callback, errback) => {
+        try {
+          const { kind, rtpParameters } = params;
+          await socket.emit("TRANSPORT_PRODUCE", { kind, rtpParameters }, (id) => {
+            callback({ id });
+          });
+        } catch (error) {
+          console.log("Error/producer transport on produce:", error);
+          errback(error);
+        }
+      });
 
       // connect send transport
       connectSendTransport();
@@ -267,6 +300,7 @@ server
 ```js
   // create webtrc transport
   const createWebRtcTransport = async (callback) => {
+    
     const webRtc__options = {
       listenIps: [
         {
@@ -324,34 +358,6 @@ client
 ```js
   const connectSendTransport = async () => {
     producer = await producerTransport.produce(params);
-
-    producerTransport.on(
-      "connect",
-      async ({ dtlsParameters }, callback, errback) => {
-        try {
-          // connect send transport on server
-          await socket.emit("TRANSPORT_CONNECT", dtlsParameters);
-
-          // must be invoked to tell server dtls parameter transferred
-          callback();
-        } catch (error) {
-          console.log("Error/producer transport on connect:", error);
-          errback(error);
-        }
-      }
-    );
-
-    producerTransport.on("produce", async (params, callback, errback) => {
-      try {
-        const { kind, rtpParameters } = params;
-        await socket.emit("TRANSPORT_PRODUCE", { kind, rtpParameters }, (id) => {
-          callback({ id });
-        });
-      } catch (error) {
-        console.log("Error/producer transport on produce:", error);
-        errback(error);
-      }
-    });
 
     producer.on("trackended", () => {
       console.log("video ended.");
