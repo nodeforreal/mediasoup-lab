@@ -1,5 +1,7 @@
 {
   "cSpell.words": [
+    "dtls",
+    "dtlsstatechange",
     "errback",
     "errorback",
     "mediasoup",

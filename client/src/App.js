@@ -54,14 +54,14 @@ function App() {
         video: {
           width: 800,
           height: 450,
-          facingMode: "environment"
+          facingMode: "environment",
         },
         // audio: true,
       });
 
       videoClientRef.current.srcObject = stream;
 
-      console.log("stream", stream.getTracks())
+      console.log("stream", stream.getTracks());
 
       params = {
         track: stream.getTracks()[0],
@@ -69,7 +69,7 @@ function App() {
       };
     } catch (error) {
       console.log("Error/get media streams:", error);
-      alert(error)
+      alert(error);
     }
   };
 
@@ -283,7 +283,7 @@ const Container = styled.div`
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 
-  .btn-container{
+  .btn-container {
     margin-top: 1rem;
     text-align: center;
   }
