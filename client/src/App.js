@@ -2,10 +2,11 @@ import { useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Device } from "mediasoup-client";
 import io from "socket.io-client";
+import { Button } from "antd";
 
 import "./App.css";
 
-const socket = io("http://localhost:3300/");
+const socket = io("https://192.168.220.186:3300");
 const device = new Device();
 
 let params = {
@@ -53,11 +54,14 @@ function App() {
         video: {
           width: 800,
           height: 450,
+          facingMode: "environment"
         },
         // audio: true,
       });
 
       videoClientRef.current.srcObject = stream;
+
+      console.log("stream", stream.getTracks())
 
       params = {
         track: stream.getTracks()[0],
@@ -65,6 +69,7 @@ function App() {
       };
     } catch (error) {
       console.log("Error/get media streams:", error);
+      alert(error)
     }
   };
 
@@ -78,7 +83,7 @@ function App() {
         routerRtpCapabilities: rtpCapabilities,
       });
       console.log("02: create device.");
-      createSendTransport();
+      // createSendTransport();
     } catch (error) {
       console.log("Error/create device:", error);
     }
@@ -128,7 +133,7 @@ function App() {
             (id) => {
               callback({ id });
               // [for now creating immediate consumer]
-              createReceiverTransport();
+              // createReceiverTransport();
             }
           );
         } catch (error) {
@@ -212,7 +217,7 @@ function App() {
 
         const { track } = consumer;
 
-        console.log("09: media tracks. ", track);
+        console.log("09: media tracks. ", track, consumer);
 
         videoRemoteRef.current.srcObject = new MediaStream([track]);
         socket.emit("RESUME");
@@ -245,8 +250,22 @@ function App() {
 
   return (
     <Container>
-      <video ref={videoClientRef} autoPlay></video>
-      <video ref={videoRemoteRef} autoPlay></video>
+      <section>
+        <video ref={videoClientRef} autoPlay></video>
+        <section className="btn-container">
+          <Button type="default" onClick={createSendTransport} size="large">
+            Produce
+          </Button>
+        </section>
+      </section>
+      <section>
+        <video ref={videoRemoteRef} autoPlay></video>
+        <section className="btn-container">
+          <Button type="default" onClick={createReceiverTransport} size="large">
+            Consume
+          </Button>
+        </section>
+      </section>
     </Container>
   );
 }
@@ -254,10 +273,19 @@ function App() {
 const Container = styled.div`
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 1.2rem;
+  gap: 1.2rem;
   video {
     width: 100%;
     aspect-ratio: 16/9;
+  }
+
+  @media screen and (max-width: 560px) {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  .btn-container{
+    margin-top: 1rem;
+    text-align: center;
   }
 `;
 

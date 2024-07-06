@@ -2,13 +2,23 @@ import express from "express";
 import { Server } from "socket.io";
 import mediasoup from "mediasoup";
 
-import http from "http";
+import https from "https";
 import cors from "cors";
+import fs from "fs";
 
 const app = express();
-const server = http.createServer(app);
 
-const allowedHeaders = ["http://localhost:3000"];
+const option = {
+  key: fs.readFileSync("server.key"),
+  cert: fs.readFileSync("ssl.cert"),
+};
+const server = https.createServer(option, app);
+
+const allowedHeaders = [
+  "https://localhost:3000",
+  "https://192.168.220.186:3000",
+  "https://192.168.220.186:3300",
+];
 
 // socket
 const io = new Server(server, {
@@ -29,7 +39,11 @@ app.use(
   })
 );
 
-server.listen(3300, () => {
+app.get("/", (req, res) => {
+  res.send("SFU Architecture.");
+});
+
+server.listen(3300, "192.168.220.186", () => {
   console.log("Server running on port 3300");
 });
 
@@ -82,7 +96,7 @@ const createWebRtcTransport = async (callback) => {
     listenIps: [
       {
         ip: "0.0.0.0",
-        announcedIp: "127.0.0.1",
+        announcedIp: "192.168.220.186",
       },
     ],
     enableUdp: true,
@@ -121,10 +135,12 @@ const createWebRtcTransport = async (callback) => {
 io.on("connection", async (socket) => {
   console.log("socket connected", socket.id);
 
-  router = await worker.createRouter({ mediaCodecs });
-
   // get rtp capabilities
   socket.on("GET_RTP_CAPABILITIES", async (callback) => {
+    if (!router) {
+      router = await worker.createRouter({ mediaCodecs });
+    }
+
     callback({ rtpCapabilities: router.rtpCapabilities });
   });
 
