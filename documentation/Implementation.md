@@ -7,12 +7,14 @@
   - [Server setup](#server-setup)
   - [Get Media streams](#get-media-streams)
   - [Get RTP capabilities](#get-rtp-capabilities)
-  - [Create Device](#create-device)
-  - [Create send transport.(Client)](#create-send-transportclient)
-  - [Create transport.(Server)](#create-transportserver)
+  - [Create Device and Load](#create-device-and-load)
+  - [Initiate create send transport. (Client)](#initiate-create-send-transport-client)
+  - [Create transport. (Server)](#create-transport-server)
   - [Connect send transport](#connect-send-transport)
   - [Connect producer transport](#connect-producer-transport)
   - [Start produce](#start-produce)
+  - [Create receiver transport](#create-receiver-transport)
+  - [Connect receiver transport and start consume](#connect-receiver-transport-and-start-consume)
 
 ## Client setup
 
@@ -209,11 +211,11 @@ server
   });
 ```
 
-## Create Device
+## Create Device and Load
 
 Loads the device with the RTP capabilities of the mediasoup router. This is how the device knows about the allowed media codecs and other settings.
 
-1. load the device
+1. load the device with rtp capabilities.
 
 client
 
@@ -227,7 +229,7 @@ client
   };
 ```
 
-## Create send transport.(Client)
+## Initiate create send transport. (Client)
 
 1. emit an event to server for create webRtc producer transport.
 2. get required parameters to create send transport.
@@ -289,7 +291,7 @@ client
   };
 ```
 
-## Create transport.(Server)
+## Create transport. (Server)
 
 Creates a new WebRTC transport.
 
@@ -424,6 +426,127 @@ server
       callback(producer.id);
     } catch (error) {
       console.log("Error/TRANSPORT_PRODUCE", error);
+    }
+  });
+```
+
+## Create receiver transport
+
+client
+
+```js
+  const createReceiverTransport = () => {
+    socket.emit(
+      "CREATE_WEBRTC_TRANSPORT",
+      { sender: false },
+      async (params) => {
+        consumerTransport = device.createRecvTransport(params);
+
+        // consumer transport on connect
+        consumerTransport.on(
+          "connect",
+          async ({ dtlsParameters }, callback, errback) => {
+            try {
+              await socket.emit("CONNECT_CONSUMER_TRANSPORT", dtlsParameters);
+              callback();
+            } catch (error) {
+              errback(errback);
+            }
+          }
+        );
+
+        connectReceiverTransport();
+      }
+    );
+  };
+```
+
+server
+
+```js
+  // create webrtc transport
+  socket.on("CREATE_WEBRTC_TRANSPORT", async ({ sender }, callback) => {
+    if (sender) {
+      producerTransport = await createWebRtcTransport(callback);
+    } else {
+      consumerTransport = await createWebRtcTransport(callback);
+    }
+  });
+```
+
+```js
+  socket.on("CONNECT_CONSUMER_TRANSPORT", async (dtlsParameters) => {
+    try {
+      await consumerTransport.connect({ dtlsParameters });
+    } catch (error) {
+      console.log("Error/TRANSPORT_RECV_CONNECT", error);
+    }
+  });
+```
+
+## Connect receiver transport and start consume
+
+client
+
+```js
+  const connectReceiverTransport = async () => {
+    socket.emit(
+      "TRANSPORT_CONSUME",
+      { rtpCapabilities: device.rtpCapabilities },
+      async (params) => {
+
+        consumer = await consumerTransport.consume({
+          producerId: params.producerId,
+          id: params.consumerId,
+          rtpParameters: params.rtpParameters,
+          kind: params.kind,
+        });
+
+        const { track } = consumer;
+
+        videoRemoteRef.current.srcObject = new MediaStream([track]);
+        
+        socket.emit("RESUME");
+      }
+    );
+  };
+```
+
+server
+
+```js
+  socket.on("TRANSPORT_CONSUME", async ({ rtpCapabilities }, callback) => {
+    try {
+      const canConsume = router.canConsume({
+        producerId: producer.id,
+        rtpCapabilities,
+      });
+
+      if (canConsume) {
+        consumer = await consumerTransport.consume({
+          producerId: producer.id,
+          rtpCapabilities,
+          paused: true,
+        });
+
+        callback({
+          consumerId: consumer.id,
+          producerId: producer.id,
+          kind: consumer.kind,
+          rtpParameters: consumer.rtpParameters,
+        });
+      }
+    } catch (error) {
+      console.log("Error/consumer transport:");
+    }
+  });
+
+  // resume consumer
+  socket.on("RESUME", async () => {
+    try {
+      await consumer.resume();
+    } catch (error) {
+      console.log("Error/consumer resume:");
     }
   });
 ```
