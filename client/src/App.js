@@ -61,7 +61,7 @@ function App() {
 
       videoClientRef.current.srcObject = stream;
 
-      console.log("stream", stream.getTracks());
+      console.log("00: get media streams", stream.getTracks());
 
       params = {
         track: stream.getTracks()[0],
@@ -92,7 +92,7 @@ function App() {
       await device.load({
         routerRtpCapabilities: rtpCapabilities,
       });
-      console.log("02: create device.");
+      console.log("02: create device.", device);
       // createSendTransport();
     } catch (error) {
       console.log("Error/create device:", error);
@@ -104,8 +104,6 @@ function App() {
    * create send transport
    */
   const createSendTransport = async () => {
-    console.log("03: create send transport.");
-
     // get transport parameters from server
     socket.emit("CREATE_WEBRTC_TRANSPORT", { sender: true }, async (params) => {
       if (params.error) {
@@ -114,6 +112,8 @@ function App() {
       }
 
       producerTransport = device.createSendTransport(params);
+
+      console.log("03: create send transport.", producerTransport);
 
       producerTransport.on(
         "connect",
@@ -162,10 +162,10 @@ function App() {
    * connect send transport
    * */
   const connectSendTransport = async () => {
+    
     console.log("04: connect send transport.", params);
-
     producer = await producerTransport.produce(params);
-
+    
     producer.on("trackended", () => {
       console.log("video ended.");
     });
@@ -180,19 +180,19 @@ function App() {
    * create receiver transport
    */
   const createReceiverTransport = () => {
-    console.log("07: create receiver transport.");
     socket.emit(
       "CREATE_WEBRTC_TRANSPORT",
       { sender: false },
       async (params) => {
         consumerTransport = device.createRecvTransport(params);
+        console.log("03: create receiver transport.", consumerTransport);
 
         // consumer transport on connect
         consumerTransport.on(
           "connect",
           async ({ dtlsParameters }, callback, errback) => {
             try {
-              console.log("on consumer connect.", dtlsParameters);
+              console.log("05: on consumer connect.", dtlsParameters);
               await socket.emit("CONNECT_CONSUMER_TRANSPORT", dtlsParameters);
               callback();
             } catch (error) {
@@ -211,12 +211,10 @@ function App() {
    * connect receiver transport
    */
   const connectReceiverTransport = async () => {
-    console.log("08: connect receiver transport.");
     socket.emit(
       "TRANSPORT_CONSUME",
       { rtpCapabilities: device.rtpCapabilities },
       async (params) => {
-        console.log("on consume.", params);
 
         consumer = await consumerTransport.consume({
           producerId: params.producerId,
@@ -225,9 +223,9 @@ function App() {
           kind: params.kind,
         });
 
-        const { track } = consumer;
+        console.log("06: on consume.", consumer);
 
-        console.log("09: media tracks. ", track, consumer);
+        const { track } = consumer;
 
         videoRemoteRef.current.srcObject = new MediaStream([track]);
         socket.emit("RESUME");
@@ -322,8 +320,7 @@ function App() {
 }
 
 const Container = styled.div`
-
-  .videos-container{
+  .videos-container {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1.2rem;

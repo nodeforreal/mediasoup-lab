@@ -141,11 +141,15 @@ io.on("connection", async (socket) => {
       router = await worker.createRouter({ mediaCodecs });
     }
 
+    console.log("00: sent rtp capabilities")
     callback({ rtpCapabilities: router.rtpCapabilities });
   });
 
   // create webrtc transport
   socket.on("CREATE_WEBRTC_TRANSPORT", async ({ sender }, callback) => {
+
+    console.log("01: created transport", sender)
+
     if (sender) {
       producerTransport = await createWebRtcTransport(callback);
     } else {
@@ -156,6 +160,7 @@ io.on("connection", async (socket) => {
   // transport connect - produce
   socket.on("TRANSPORT_CONNECT", async (dtlsParameters) => {
     try {
+      console.log("02: producer transport/connect", 'dtlsParameters')
       await producerTransport.connect({ dtlsParameters });
     } catch (error) {
       console.log("Error/TRANSPORT_CONNECT", error);
@@ -165,6 +170,7 @@ io.on("connection", async (socket) => {
   // transport produce
   socket.on("TRANSPORT_PRODUCE", async ({ kind, rtpParameters }, callback) => {
     try {
+      console.log("03: producer transport/start produce.", 'rtpParameters')
       producer = await producerTransport.produce({ kind, rtpParameters });
       callback(producer.id);
     } catch (error) {
@@ -176,6 +182,7 @@ io.on("connection", async (socket) => {
   socket.on("CONNECT_CONSUMER_TRANSPORT", async (dtlsParameters) => {
     try {
       await consumerTransport.connect({ dtlsParameters });
+      console.log("03: consumer transport/connect", 'dtlsParameters')
     } catch (error) {
       console.log("Error/TRANSPORT_RECV_CONNECT", error);
     }
@@ -202,6 +209,8 @@ io.on("connection", async (socket) => {
           kind: consumer.kind,
           rtpParameters: consumer.rtpParameters,
         });
+
+        console.log("02: consumer transport/consume", 'rtpCapabilities');
       }
     } catch (error) {
       console.log("Error/consumer transport:");
