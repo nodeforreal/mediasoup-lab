@@ -73,6 +73,16 @@ function App() {
     }
   };
 
+  /** node : 01
+   * get RTP Capabilities
+   **/
+  const getRtpCapabilities = () => {
+    socket.emit("GET_RTP_CAPABILITIES", (params) => {
+      console.log("01: get rtp capabilities.", params.rtpCapabilities);
+      rtpCapabilities = params.rtpCapabilities;
+    });
+  };
+
   /**
    * node:02
    * create device
@@ -143,7 +153,7 @@ function App() {
       });
 
       // connect send transport
-      connectSendTransport();
+      // connectSendTransport();
     });
   };
 
@@ -191,7 +201,7 @@ function App() {
           }
         );
 
-        connectReceiverTransport();
+        // connectReceiverTransport();
       }
     );
   };
@@ -229,40 +239,81 @@ function App() {
    * node: start
    * mediasoup
    **/
-  useEffect(() => {
-    (async () => {
-      console.log("00: get user media.");
-      await getUserMedia();
+  // useEffect(() => {
+  //   (async () => {
+  //     console.log("00: get user media.");
+  //     await getUserMedia();
 
-      /**
-       * node:01
-       * get RTP capabilities from server and create device.
-       **/
-      socket.emit("GET_RTP_CAPABILITIES", (params) => {
-        console.log("01: get rtp capabilities.", params.rtpCapabilities);
-        rtpCapabilities = params.rtpCapabilities;
-        createDevice();
-      });
-    })();
+  //     /**
+  //      * node:01
+  //      * get RTP capabilities from server and create device.
+  //      **/
+  //     socket.emit("GET_RTP_CAPABILITIES", (params) => {
+  //       console.log("01: get rtp capabilities.", params.rtpCapabilities);
+  //       rtpCapabilities = params.rtpCapabilities;
+  //       createDevice();
+  //     });
+  //   })();
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
   return (
     <Container>
-      <section>
-        <video ref={videoClientRef} autoPlay></video>
-        <section className="btn-container">
-          <Button type="default" onClick={createSendTransport} size="large">
-            Produce
-          </Button>
+      <section className="videos-container">
+        <section>
+          <video ref={videoClientRef} autoPlay></video>
+          <section className="btn-container">
+            {/* <Button type="default" onClick={createSendTransport} size="large">
+              Produce
+            </Button> */}
+          </section>
+        </section>
+        <section>
+          <video ref={videoRemoteRef} autoPlay></video>
+          <section className="btn-container">
+            {/* <Button type="default" onClick={createReceiverTransport} size="large">
+              Consume
+            </Button> */}
+          </section>
         </section>
       </section>
-      <section>
-        <video ref={videoRemoteRef} autoPlay></video>
-        <section className="btn-container">
+
+      <section className="execute-buttons-container">
+        <section>
+          <Button type="default" onClick={getUserMedia} size="large">
+            Get Media streams
+          </Button>
+          <Button type="default" onClick={getRtpCapabilities} size="large">
+            Get RTP Capabilities
+          </Button>
+          <Button type="default" onClick={createDevice} size="large">
+            Create Device
+          </Button>
+          <Button type="default" onClick={createSendTransport} size="large">
+            Create Send Transport
+          </Button>
+          <Button type="default" onClick={connectSendTransport} size="large">
+            Connect Send Transport
+          </Button>
+        </section>
+
+        <section>
+          <Button type="default" onClick={getRtpCapabilities} size="large">
+            Get RTP Capabilities
+          </Button>
+          <Button type="default" onClick={createDevice} size="large">
+            Create Device
+          </Button>
           <Button type="default" onClick={createReceiverTransport} size="large">
-            Consume
+            Create Receiver Transport
+          </Button>
+          <Button
+            type="default"
+            onClick={connectReceiverTransport}
+            size="large"
+          >
+            Connect Receiver Transport
           </Button>
         </section>
       </section>
@@ -271,12 +322,15 @@ function App() {
 }
 
 const Container = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.2rem;
-  video {
-    width: 100%;
-    aspect-ratio: 16/9;
+
+  .videos-container{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.2rem;
+    video {
+      width: 100%;
+      aspect-ratio: 16/9;
+    }
   }
 
   @media screen and (max-width: 560px) {
@@ -286,6 +340,19 @@ const Container = styled.div`
   .btn-container {
     margin-top: 1rem;
     text-align: center;
+  }
+
+  .execute-buttons-container {
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .execute-buttons-container section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 `;
 
