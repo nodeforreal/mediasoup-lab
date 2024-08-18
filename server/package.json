@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "export HTTPS=true&&SSL_CRT_FILE=ssl.cert&&SSL_KEY_FILE=server.key && node --watch  --trace-warnings server.js"
+    "dev": "export HTTPS=true&&SSL_CRT_FILE=ssl.cert&&SSL_KEY_FILE=server.key && node --watch  --trace-warnings --inspect server.js"
   },
   "author": "",
   "license": "ISC",
