@@ -1,10 +1,12 @@
 {
   "cSpell.words": [
+    "abcdefghijlmnopqrstvwxyz",
     "dtls",
     "dtlsstatechange",
     "errback",
     "errorback",
     "mediasoup",
+    "SRTP",
     "trackended",
     "transportclose",
     "WEBRTC",
