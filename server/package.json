@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
-  "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "export HTTPS=true&&SSL_CRT_FILE=ssl.cert&&SSL_KEY_FILE=server.key && node --watch  --trace-warnings --inspect server.js"
@@ -14,6 +13,7 @@
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "mediasoup": "^3.14.7",
+    "rxjs": "^7.8.1",
     "socket.io": "^4.7.5"
   },
   "proxy": "http://localhost:3300/"

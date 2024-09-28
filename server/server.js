@@ -1,10 +1,12 @@
-import express from "express";
-import { Server } from "socket.io";
-import mediasoup from "mediasoup";
+const express = require("express");
+const { Server } = require("socket.io");
+const mediasoup = require("mediasoup");
 
-import https from "https";
-import cors from "cors";
-import fs from "fs";
+const https = require("https");
+const cors = require("cors");
+const fs = require("fs");
+const os = require("os")
+const path = require("path");
 
 const app = express();
 
@@ -12,9 +14,26 @@ const option = {
   key: fs.readFileSync("server.key"),
   cert: fs.readFileSync("ssl.cert"),
 };
-const server = https.createServer(option, app);
+const server = https.createServer(app);
 
-const ip = "192.168.246.187";
+
+const getIpAddress = ()=>{
+  for(let name  in os.networkInterfaces()){
+    const addresses = os.networkInterfaces()[name]
+    for(let data of addresses){
+      if(data.family === "IPv4" && !data.internal){
+         return data.address
+      }
+    }
+  }
+
+  return null
+}
+
+const ip = getIpAddress() ;
+const PORT =  process.env.PORT || 3300
+
+console.log("log", ip, PORT)
 
 const allowedHeaders = [
   "https://localhost:3000",
@@ -22,31 +41,34 @@ const allowedHeaders = [
   `https://${ip}:3000`,
   `https://${ip}:3300`,
 ];
-
+ 
 // socket
-const io = new Server(server, {
-  cors: {
-    origin: allowedHeaders,
-  },
-});
+const io = new Server(server);
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (allowedHeaders.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by cors."));
-      }
-    },
-  })
-);
+// middleware
+app.use(express.static("public"))
 
-app.get("/", (req, res) => {
-  res.send("SFU Architecture.");
-});
 
-server.listen(3300, () => {
+app.use(cors());
+
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       if (allowedHeaders.indexOf(origin) !== -1) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by cors."));
+//       }
+//     },
+//   })
+// );
+
+app.use("*", (req, res)=>{
+  res.sendFile( __dirname + "/public/index.html")
+})
+
+
+server.listen(PORT, () => {
   console.log("Server running on port 3300");
 });
 
@@ -161,7 +183,7 @@ io.on("connection", async (socket) => {
   console.log("socket connected", socket.id);
 
   // create or join room
-  socket.on("JOIN_ROOM", async ({ roomId, user }, callback) => {
+  socket.on("JOIN_ROOM", async ({ roomId, user, title }, callback) => {
     let router;
 
     if (!rooms[roomId]) {
@@ -170,22 +192,32 @@ io.on("connection", async (socket) => {
       // create room with id
       rooms[roomId] = {};
       rooms[roomId].router = router;
+      rooms[roomId].title = title;
       rooms[roomId].peers = [socket];
       rooms[roomId].producerTransports = [];
       rooms[roomId].consumerTransports = [];
       rooms[roomId].peers = [socket];
       rooms[roomId].producerIds = [];
       rooms[roomId].consumers = [];
+      rooms[roomId].members = [{
+        sid: socket.id,
+        name: user.name,
+        admin: true
+      }]
 
       // create peer with id
       peers[socket.id] = {};
       peers[socket.id].roomId = roomId;
       peers[socket.id].user = {...user};
-
     } else {
       // get router and push new socket
       router = rooms[roomId].router;
       rooms[roomId].peers.push(socket);
+      rooms[roomId].members.push({
+        sid: socket.id,
+        name: user.name,
+        admin: false
+      })
 
       // add roomId to the new peer
       peers[socket.id] = {};
@@ -195,8 +227,12 @@ io.on("connection", async (socket) => {
 
     console.log("rooms", rooms);
 
-    createNewMemberSocket(socket, roomId);
-    callback({ rtpCapabilities: router.rtpCapabilities });
+    // attach socket handlers
+    newProducerSignalHandler(socket, roomId);
+    userSignalHandler(roomId, "user-joined")
+    socket.emit(`SIGNAL/USER/${roomId}`)
+
+    callback({ rtpCapabilities: router.rtpCapabilities, socketId: socket.id });
   });
 
   // create webrtc transport
@@ -224,9 +260,9 @@ io.on("connection", async (socket) => {
   });
 
   // connect producer
-  socket.on("CONNECT_PRODUCER", async (dtlsParameters) => {
+  socket.on("CONNECT_PRODUCER", async (dtlsParameters, transportId) => {
     try {
-      const transport = getTransport("producer", socket, { sid: socket.id });
+      const transport = getTransport("producer", socket, { id: transportId });
       transport.connect({ dtlsParameters });
     } catch (error) {
       console.log("Error/CONNECT_PRODUCER:", error);
@@ -234,13 +270,14 @@ io.on("connection", async (socket) => {
   });
 
   // start produce
-  socket.on("START_PRODUCE", async ({ kind, rtpParameters }, callback) => {
+  socket.on("START_PRODUCE", async ({ kind, rtpParameters, transportId }, callback) => {
     try {
-      const producer = await getTransport("producer", socket, {
-        sid: socket.id,
-      }).produce({
+      console.log("start-produce", rooms)
+
+      const producer = await getTransport("producer", socket, { id: transportId })
+      .produce({
         kind,
-        rtpParameters,
+        rtpParameters
       });
       callback(producer.id);
       addProducerId(socket.id, producer.id);
@@ -279,24 +316,36 @@ io.on("connection", async (socket) => {
           consumer = await consumerTransport.consume({
             producerId: remoteProducerId,
             rtpCapabilities,
-            paused: true,
+            paused: true
           });
 
           consumer.on("transportclose", () => {
             console.log("transport closed");
-          });
-
-          consumer.on("producerclose", () => {
-            console.log("producer closed");
             consumerTransport.close([]);
             consumer.close();
             room.peers.forEach((_socket) => {
-              _socket.emit("MEMBER_LEFT", { remoteProducerId });
+              _socket.emit("PRODUCER_CLOSED", { remoteProducerId });
             });
-
+            
             removeConsumer(socket.id, consumer.id);
             removeConsumerTransport(socket.id, consumerTransport.id);
+            removeProducerId(socket.id, remoteProducerId)
+            
+            console.log("transport closed", room );
+          });
 
+          consumer.on("producerclose", () => {
+            consumerTransport.close([]);
+            consumer.close();
+            room.peers.forEach((_socket) => {
+              _socket.emit("PRODUCER_CLOSED", { remoteProducerId });
+            });
+            
+            removeConsumer(socket.id, consumer.id);
+            removeConsumerTransport(socket.id, consumerTransport.id);
+            removeProducerId(socket.id, remoteProducerId)
+            
+            console.log("producer closed", room );
           });
 
           callback({
@@ -333,10 +382,15 @@ io.on("connection", async (socket) => {
   // clean up socket
   socket.on("disconnect", () => {
     if (peers[socket.id]) {
+      console.log("signal/user/disconnect")
+      removeMember(socket.id)
+      userSignalHandler(peers[socket.id].roomId, "user-left")
+
       removeProducerTransport(socket.id);
       removePeer(socket.id);
       removeConsumers(socket.id);
       removeProducerId(socket.id);
+
       delete peers[socket.id];
       console.log("disconnect/clean-up", rooms);
     }
@@ -345,13 +399,20 @@ io.on("connection", async (socket) => {
 
 // socket utilities
 /* create socket for room new joiner signal */
-const createNewMemberSocket = (socket, roomId) => {
-  socket.on(`SIGNAL/NEW_MEMBER/${roomId}`, (id) => {
+const newProducerSignalHandler = (socket, roomId) => {
+  socket.on(`SIGNAL/NEW_PRODUCER/${roomId}`, (id) => {
     rooms[roomId].peers.forEach((_socket) => {
-      _socket.emit(`NEW_MEMBER/${roomId}`, rooms[roomId].producerIds);
+      _socket.emit(`NEW_PRODUCER/${roomId}`, {producerIds : rooms[roomId].producerIds, members: rooms[roomId].members});
     });
   });
 };
+
+/* new user signal handler */
+const userSignalHandler = (roomId, signal)=>{
+  rooms[roomId].peers.forEach((_socket)=>{
+    _socket.emit("SIGNAL/USER", { members: rooms[roomId].members, signal })
+  })
+}
 
 // utilities
 /* get transport from room */
@@ -369,6 +430,10 @@ const getTransport = (type, socket, option) => {
 
   if (type === "producer" && option.sid) {
     object = room.producerTransports.find(({ sid }) => sid === option.sid);
+  }
+
+  if (type === "producer" && option.id) {
+    object = room.producerTransports.find(({ id }) => id === option.id);
   }
 
   return object.transport;
@@ -407,9 +472,14 @@ const addProducerId = (socketId, producerId) => {
 };
 
 /* remove producer id to room */
-const removeProducerId = (socketId) => {
+const removeProducerId = (socketId, _id) => {
   const room = rooms[peers[socketId].roomId];
-  room.producerIds = room.producerIds.filter(({ sid }) => sid !== socketId);
+  if(_id){
+    room.producerIds = room.producerIds.filter(({ id }) => id !== _id);
+    console.log("producerIds", room.producerIds)
+  }else{
+    room.producerIds = room.producerIds.filter(({ sid }) => sid !== socketId);
+  }
 };
 
 // get consumer
@@ -431,3 +501,9 @@ const removeConsumerTransport = (socketId, _id) => {
     ({ id }) => id !== _id
   );
 };
+
+/* remove user data*/
+const removeMember = (socketId)=>{
+  const room = rooms[peers[socketId].roomId]
+  room.members = room.members.filter(({sid})=> sid != socketId)
+} 
