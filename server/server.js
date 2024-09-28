@@ -2,7 +2,7 @@ const express = require("express");
 const { Server } = require("socket.io");
 const mediasoup = require("mediasoup");
 
-const https = require("https");
+const https = require("http");
 const cors = require("cors");
 const fs = require("fs");
 const os = require("os")
@@ -10,12 +10,12 @@ const path = require("path");
 
 const app = express();
 
-const option = {
-  key: fs.readFileSync("server.key"),
-  cert: fs.readFileSync("ssl.cert"),
-};
+// const option = {
+//   key: fs.readFileSync("server.key"),
+//   cert: fs.readFileSync("ssl.cert"),
+// };
 
-const server = https.createServer(option, app);
+const server = https.createServer(app);
 
 
 const getIpAddress = ()=>{
@@ -39,8 +39,10 @@ console.log("log", ip, PORT)
 const allowedHeaders = [
   "https://localhost:3000",
   "https://localhost:3300",
+  "http://localhost:3300",
   `https://${ip}:3000`,
   `https://${ip}:3300`,
+  `https://mediasoup-lab.onrender.com`
 ];
  
 // socket
@@ -48,7 +50,6 @@ const io = new Server(server);
 
 // middleware
 app.use(express.static("public"))
-
 
 app.use(cors());
 
@@ -69,7 +70,7 @@ app.use("*", (req, res)=>{
 })
 
 
-app.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log("Server running on port 3300");
 });
 
