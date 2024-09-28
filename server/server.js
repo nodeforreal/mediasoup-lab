@@ -74,8 +74,6 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 
-console.log("log; ", "end")
-return;
 // mediasoup variables
 let worker;
 
