@@ -10,12 +10,12 @@ const path = require("path");
 
 const app = express();
 
-// const option = {
-//   key: fs.readFileSync("server.key"),
-//   cert: fs.readFileSync("ssl.cert"),
-// };
+const option = {
+  key: fs.readFileSync("server.key"),
+  cert: fs.readFileSync("ssl.cert"),
+};
 
-const server = https.createServer(app);
+const server = https.createServer(option, app);
 
 
 const getIpAddress = ()=>{
