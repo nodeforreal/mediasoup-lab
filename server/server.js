@@ -31,7 +31,7 @@ const getIpAddress = ()=>{
   return null
 }
 
-const ip = getIpAddress() ;
+const ip =  process.env.ANNOUNCED_IP  || getIpAddress() ;
 const PORT =  process.env.PORT || 3300
 
 console.log("log", ip, PORT)
