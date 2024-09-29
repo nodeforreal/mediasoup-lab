@@ -108,8 +108,8 @@ let peers = {};
 
 const createWorker = async () => {
   worker = await mediasoup.createWorker({
-    rtcMinPort: 30000,
-    rtcMaxPort: 40000,
+    rtcMinPort: process.env.RTC_MIN_PORT || 30000,
+    rtcMaxPort: process.env.RTC_MAX_PORT || 40000,
   });
 
   console.log("worker pid", worker.pid);
