@@ -7,6 +7,7 @@ const cors = require("cors");
 const fs = require("fs");
 const os = require("os")
 const path = require("path");
+const child_process = require("child_process")
 
 const app = express();
 
@@ -74,6 +75,9 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log("Server running on port 3300");
 });
 
+child_process.exec("curl ipinfo.io/ip", (error,stdout,stderr)=>{
+  console.log(stdout, ip)
+})
 
 // mediasoup variables
 let worker;
