@@ -103,6 +103,15 @@ function App() {
 
       let producerTransport = device.createSendTransport(params);
 
+      producerTransport.on('icestatechange', (iceState) => {
+        console.log(`ICE state changed:`, iceState);
+      });
+      
+      producerTransport.on('connectionstatechange', (connectionState) => {
+        console.log(`Connection state changed:`, connectionState);
+      });
+      
+      console.log("transport parameters", params)
       // connect producer
       producerTransport.on(
         "connect",

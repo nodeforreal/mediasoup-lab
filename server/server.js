@@ -153,6 +153,14 @@ const _createWebRtcTransport = async (router, callback) => {
     enableUdp: true,
     enableTcp: true,
     preferUdp: true,
+    iceServers: [
+      {
+        urls: "stun:stun.l.google.com:19302"  
+      },
+      {
+        urls: "stun:stun1.l.google.com:19302"
+      }
+    ]
   };
 
   try {
@@ -163,6 +171,10 @@ const _createWebRtcTransport = async (router, callback) => {
         transport.close();
       }
     });
+
+    transport.on("iceconnectionstatechange", (state)=>{
+      console.log("ice connection change", state)
+    })
 
     transport.on("close", (dtlsstatechange) => {
       console.log("transport closed.");
@@ -232,8 +244,6 @@ io.on("connection", async (socket) => {
 
     }
 
-    console.log("rooms", rooms);
-
     // attach socket handlers
     newProducerSignalHandler(socket, roomId);
     userSignalHandler(roomId, "user-joined")
@@ -279,8 +289,6 @@ io.on("connection", async (socket) => {
   // start produce
   socket.on("START_PRODUCE", async ({ kind, rtpParameters, transportId }, callback) => {
     try {
-      console.log("start-produce", rooms)
-
       const producer = await getTransport("producer", socket, { id: transportId })
       .produce({
         kind,
@@ -288,6 +296,7 @@ io.on("connection", async (socket) => {
       });
       callback(producer.id);
       addProducerId(socket.id, producer.id);
+      console.log("start-produce", { kind, rtpParameters, transportId })
     } catch (error) {
       console.log("Error/START_PRODUCE:", error);
     }
@@ -338,7 +347,7 @@ io.on("connection", async (socket) => {
             removeConsumerTransport(socket.id, consumerTransport.id);
             removeProducerId(socket.id, remoteProducerId)
             
-            console.log("transport closed", room );
+            console.log("transport closed", remoteProducerId );
           });
 
           consumer.on("producerclose", () => {
@@ -352,10 +361,17 @@ io.on("connection", async (socket) => {
             removeConsumerTransport(socket.id, consumerTransport.id);
             removeProducerId(socket.id, remoteProducerId)
             
-            console.log("producer closed", room );
+            console.log("producer closed",  remoteProducerId);
           });
 
           callback({
+            consumerId: consumer.id,
+            producerId: remoteProducerId,
+            kind: consumer.kind,
+            rtpParameters: consumer.rtpParameters,
+          });
+
+          console.log("start-consume",  {
             consumerId: consumer.id,
             producerId: remoteProducerId,
             kind: consumer.kind,
@@ -399,7 +415,7 @@ io.on("connection", async (socket) => {
       removeProducerId(socket.id);
 
       delete peers[socket.id];
-      console.log("disconnect/clean-up", rooms);
+      console.log("disconnect/clean-up");
     }
   });
 });
