@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import styled from "styled-components";
 import { useNavigate, useParams } from "react-router";
 
@@ -80,7 +80,7 @@ function App() {
   const [hasJoined, setHasJoined] = useState(false);
   const [userName, setUserName] = useState("user id: "+ nanoid(4));
   const [title, setTitle] = useState("Dev Catch up");
-  const [socketId, setSocketId] = useState(null)
+  // const [socketId, setSocketId] = useState(null)
 
   let [videoProducerId, setVideoProducerId] = useState(null);
   let [audioProducerId, setAudioProducerId] = useState(null);
@@ -353,7 +353,7 @@ function App() {
           });
 
           setHasJoined(true);
-          setSocketId(params.socketId)
+          // setSocketId(params.socketId)
           socket.emit(`SIGNAL/NEW_PRODUCER/${roomId}`);
           console.log("rtp capabilities", rtpCapabilities);
         }
