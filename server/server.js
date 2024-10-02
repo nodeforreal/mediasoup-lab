@@ -16,7 +16,7 @@ const option = {
   cert: fs.readFileSync("ssl.cert"),
 };
 
-const server = https.createServer(option, app);
+const server = https.createServer(app);
 
 
 const getIpAddress = ()=>{
