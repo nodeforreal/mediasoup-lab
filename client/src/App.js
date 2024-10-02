@@ -12,7 +12,7 @@ import "./App.css";
 import { customAlphabet } from "nanoid";
 const nanoid = customAlphabet("abcdefghijlmnopqrstvwxyz");
 
-const socket = io("https://mediasoup-lab.onrender.com");
+const socket = io(process.env.NODE_ENV === 'production' ? "https://mediasoup-lab.onrender.com" : "https://localhost:3300");
 const device = new Device();
 
 let videoParams = {
@@ -101,17 +101,7 @@ function App() {
         return;
       }
 
-      let producerTransport = device.createSendTransport({
-        ...params,
-        iceParameters: {
-          ...params.iceParameters,
-          iceServers: [
-            {
-              urls: 'stun:stun.l.google.com:19302'
-            }
-          ]
-        }
-      });
+      let producerTransport = device.createSendTransport(params);
 
       producerTransport.on('icestatechange', (iceState) => {
         console.log(`ICE state changed:`, iceState);
