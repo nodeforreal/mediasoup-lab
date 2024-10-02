@@ -2,7 +2,7 @@ const express = require("express");
 const { Server } = require("socket.io");
 const mediasoup = require("mediasoup");
 
-const https = require("http");
+const https = require("https");
 const cors = require("cors");
 const fs = require("fs");
 const os = require("os")
@@ -11,12 +11,12 @@ const child_process = require("child_process")
 
 const app = express();
 
-// const option = {
-//   key: fs.readFileSync("server.key"),
-//   cert: fs.readFileSync("ssl.cert"),
-// };
+const option = {
+  key: fs.readFileSync("server.key"),
+  cert: fs.readFileSync("ssl.cert"),
+};
 
-const server = https.createServer(app);
+const server = https.createServer(option, app);
 
 
 const getIpAddress = ()=>{
@@ -180,6 +180,7 @@ const _createWebRtcTransport = async (router, callback) => {
       console.log("transport closed.");
     });
 
+    console.log("transport ", transport)
     callback({
       id: transport.id,
       iceCandidates: transport.iceCandidates,
