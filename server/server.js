@@ -74,7 +74,7 @@ app.use("*", (req, res)=>{
 })
 
 
-server.listen(PORT, ip , () => {
+server.listen(PORT, () => {
   console.log("Server running on port 3300");
 });
 
