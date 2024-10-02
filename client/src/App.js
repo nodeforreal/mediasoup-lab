@@ -12,7 +12,7 @@ import "./App.css";
 import { customAlphabet } from "nanoid";
 const nanoid = customAlphabet("abcdefghijlmnopqrstvwxyz");
 
-const socket = io("/");
+const socket = io("https://mediasoup-lab.onrender.com");
 const device = new Device();
 
 let videoParams = {

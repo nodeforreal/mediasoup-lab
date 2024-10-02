@@ -19,7 +19,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "export HTTPS=true&&SSL_CRT_FILE=ssl.cert&&SSL_KEY_FILE=server.key && react-scripts start",
+    "start": "react-scripts start",
+    "dev": "export HTTPS=true&&SSL_CRT_FILE=ssl.cert&&SSL_KEY_FILE=server.key && react-scripts start",
     "build": "react-scripts build"
   },
   "eslintConfig": {
