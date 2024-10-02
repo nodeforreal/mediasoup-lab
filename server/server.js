@@ -50,28 +50,31 @@ const allowedHeaders = [
 // socket
 const io = new Server(server,  {
   cors: {
-    origin: allowedHeaders,
+    // origin: allowedHeaders,
+    origin: "*",
   },
 });
 
 // middleware
-app.use(express.static("public"))
+// app.use(express.static("public"))
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (allowedHeaders.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by cors."));
-      }
-    },
-  })
-);
+app.use(cors())
+
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       if (allowedHeaders.indexOf(origin) !== -1) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by cors."));
+//       }
+//     },
+//   })
+// );
 
 
-app.use("*", (req, res)=>{
-  res.sendFile( __dirname + "/public/index.html")
+app.get("/.well-known/acme-challenge/yIM4CGzTIFBKleqLRs5GQ2gb0ZSKkEhrqrT352y-FYg", (req, res)=>{
+  res.status(200).send("ok")
 })
 
 
