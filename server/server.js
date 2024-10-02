@@ -69,6 +69,11 @@ app.use(
   })
 );
 
+
+app.use("/.well-known/acme-challenge/BiXFGXkyLLYf0ky0HSQGb7nWyvWP9D17NMw4hSbp-1I", (req, res)=>{
+  res.status(200).send("ok")
+})
+
 app.use("*", (req, res)=>{
   res.sendFile( __dirname + "/public/index.html")
 })
