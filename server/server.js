@@ -2,7 +2,7 @@ const express = require("express");
 const { Server } = require("socket.io");
 const mediasoup = require("mediasoup");
 
-const https = require("https");
+const https = require("http");
 const cors = require("cors");
 const fs = require("fs");
 const os = require("os")
@@ -16,7 +16,7 @@ const option = {
   cert: fs.readFileSync("ssl.cert"),
 };
 
-const server = https.createServer(option, app);
+const server = https.createServer( app);
 
 
 const getIpAddress = ()=>{

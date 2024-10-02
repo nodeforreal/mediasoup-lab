@@ -24,4 +24,5 @@ yarn-error.log*
 
 server.key
 ssl.cert
+ssl.crt
 .env
