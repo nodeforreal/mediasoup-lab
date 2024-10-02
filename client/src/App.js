@@ -101,7 +101,16 @@ function App() {
         return;
       }
 
-      let producerTransport = device.createSendTransport(params);
+      let producerTransport = device.createSendTransport({
+        ...params,
+        iceParameters: {
+          iceServers: [
+            {
+              urls: 'stun:stun.l.google.com:19302'
+            }
+          ]
+        }
+      });
 
       producerTransport.on('icestatechange', (iceState) => {
         console.log(`ICE state changed:`, iceState);

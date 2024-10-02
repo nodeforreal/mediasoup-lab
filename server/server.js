@@ -146,8 +146,8 @@ const _createWebRtcTransport = async (router, callback) => {
   const webRtc__options = {
     listenIps: [
       {
-        ip: "0.0.0.0",
-        announcedIp: ip,
+        ip: ip,
+        announcedIp: null,
       },
     ],
     enableUdp: true,
@@ -155,10 +155,7 @@ const _createWebRtcTransport = async (router, callback) => {
     preferUdp: true,
     iceServers: [
       {
-        urls: "stun:stun.l.google.com:19302"  
-      },
-      {
-        urls: "stun:stun1.l.google.com:19302"
+        urls: 'stun:stun.l.google.com:19302'
       }
     ]
   };
