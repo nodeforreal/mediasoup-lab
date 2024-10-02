@@ -48,24 +48,26 @@ const allowedHeaders = [
 ];
  
 // socket
-const io = new Server(server);
+const io = new Server(server,  {
+  cors: {
+    origin: allowedHeaders,
+  },
+});
 
 // middleware
 app.use(express.static("public"))
 
-app.use(cors());
-
-// app.use(
-//   cors({
-//     origin: function (origin, callback) {
-//       if (allowedHeaders.indexOf(origin) !== -1) {
-//         callback(null, true);
-//       } else {
-//         callback(new Error("Not allowed by cors."));
-//       }
-//     },
-//   })
-// );
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (allowedHeaders.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by cors."));
+      }
+    },
+  })
+);
 
 app.use("*", (req, res)=>{
   res.sendFile( __dirname + "/public/index.html")
