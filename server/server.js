@@ -43,7 +43,8 @@ const allowedHeaders = [
   "http://localhost:3300",
   `https://${ip}:3000`,
   `https://${ip}:3300`,
-  `https://mediasoup-lab.onrender.com`
+  `https://mediasoup-lab.onrender.com`,
+  `https://mediasoup-lab.netlify.app`
 ];
  
 // socket
