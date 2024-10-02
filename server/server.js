@@ -73,7 +73,7 @@ app.use(cors())
 // );
 
 
-app.get("/.well-known/acme-challenge/yIM4CGzTIFBKleqLRs5GQ2gb0ZSKkEhrqrT352y-FYg", (req, res)=>{
+app.get("/.well-known/acme-challenge/:id", (req, res)=>{
   res.status(200).send("ok")
 })
 
